@@ -13,3 +13,6 @@ const firebaseConfig = {
   messagingSenderId: "218175216914",
   appId: "1:218175216914:web:67f74932c3cb04fd7da7cb",
   measurementId: "G-NQ1EJ73P7S"
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
