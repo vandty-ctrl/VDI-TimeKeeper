@@ -12,7 +12,8 @@ const firebaseConfig = {
   storageBucket: "vdi-timekeeper.firebasestorage.app",
   messagingSenderId: "218175216914",
   appId: "1:218175216914:web:67f74932c3cb04fd7da7cb",
-  measurementId: "G-NQ1EJ73P7S"
+  measurementId: "G-NQ1EJ73P7S",
+  uid: "C4vcpU6HImfa3Q7uqpA5pP8EbeO2"
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
