@@ -1,16 +1,21 @@
-// VDI TimeKeeper settings.
-// 1) Paste your Firebase web app config below (Firebase console > Project settings > Your apps).
-// 2) After you create your own account in the app, paste your User UID as MANAGER_UID
-//    (Firebase console > Authentication > Users). Put the same UID in firestore.rules.
-// The apiKey here is meant to be public; your data is protected by firestore.rules.
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-export const firebaseConfig = {
-  apiKey: "PASTE_API_KEY",
-  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT_ID.appspot.com",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID"
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCo00deD3LAzDy2pNOiBMvn_OZRy6Y8AVI",
+  authDomain: "vdi-timekeeper.firebaseapp.com",
+  projectId: "vdi-timekeeper",
+  storageBucket: "vdi-timekeeper.firebasestorage.app",
+  messagingSenderId: "218175216914",
+  appId: "1:218175216914:web:67f74932c3cb04fd7da7cb",
+  measurementId: "G-NQ1EJ73P7S"
 };
 
-export const MANAGER_UID = "PASTE_YOUR_UID";
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
