@@ -15,7 +15,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isManager() {
-      return request.auth != null && request.auth.uid == 'PASTE_YOUR_UID';
+      return request.auth != null && request.auth.uid == 'C4vcpU6HImfa3Q7uqpA5pP8EbeO2';
     }
     function isSelf(uid) {
       return request.auth != null && request.auth.uid == uid;
