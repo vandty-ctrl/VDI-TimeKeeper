@@ -10,12 +10,12 @@
 // The apiKey is meant to be public. Your data is protected by firestore.rules.
 
 export const firebaseConfig = {
-  apiKey: "PASTE_API_KEY",
-  authDomain: "PASTE_AUTH_DOMAIN",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_STORAGE_BUCKET",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID"
+  apiKey: "AIzaSyA6XNlpYHdVuAq-6AaSX_JdaJYplwvCCYE",
+  authDomain: "vdi-timekeeper-29648.firebaseapp.com",
+  projectId: "vdi-timekeeper-29648",
+  storageBucket: "vdi-timekeeper-29648.firebasestorage.app",
+  messagingSenderId: "714227873075",
+  appId: "1:714227873075:web:13caef156420127b7bfa46"
 };
 
 export const MANAGER_UID = "PASTE_YOUR_UID";
