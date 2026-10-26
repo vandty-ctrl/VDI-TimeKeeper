@@ -7,8 +7,8 @@
 <meta name="description" content="Clock in, clock out, and get reminded at your times.">
 <meta name="theme-color" content="#152120">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="TimeKeeper">
@@ -111,6 +111,9 @@ td.tot.ot{color:var(--warn)}
 .kbd{font:500 .72rem var(--f-mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;color:var(--muted)}
 .install{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .err{color:var(--warn);font-weight:600;font-size:.88rem;margin:0}
+.uid{font:600 .95rem var(--f-mono);background:var(--sunk);border:1px dashed var(--muted);border-radius:8px;padding:12px;word-break:break-all;user-select:all;-webkit-user-select:all}
+ol.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:65ch}
+code{font-family:var(--f-mono);font-size:.9em;background:var(--sunk);padding:1px 5px;border-radius:4px}
 @media (prefers-reduced-motion:no-preference){.punch{transition:transform .12s}.punch:active{transform:scale(.97)}}
 
 /* Employee: phone-first (iPhone + Android) */

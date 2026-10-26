@@ -1,27 +1,32 @@
 rules_version = '2';
 
 // VDI TimeKeeper security rules.
-// Replace PASTE_YOUR_UID with your own User UID (Firebase console > Authentication > Users),
-// then paste this whole file into Firestore Database > Rules and click Publish.
+// 1) In the isManager line below, replace the placeholder with your user ID
+//    (the app shows it to you after you sign up). Keep the single quotes.
+// 2) In Firebase: Firestore Database > Rules. Delete everything there, paste this whole file,
+//    and click Publish.
 //
 // What these rules guarantee:
 //  - Only the manager can read anyone's punches or hours.
 //  - An employee can read and edit only their own time card (name, reminders, on/off clock).
 //  - An employee can never read punches, even their own, and can never edit or delete one.
-//  - Clock-in and clock-out times are stamped by Google's servers, not the phone,
-//    so nobody can backdate a punch by changing their phone's clock.
+//  - Clock-in and clock-out times are stamped by Google's servers, not the phone.
+//  - Each shift can be recorded only once, so hours can't be padded.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function isManager() {
-      return request.auth != null && request.auth.uid == 'C4vcpU6HImfa3Q7uqpA5pP8EbeO2';
+      return request.auth != null && request.auth.uid == 'PASTE_YOUR_UID';
     }
     function isSelf(uid) {
       return request.auth != null && request.auth.uid == uid;
     }
-    function card(uid) {
+    function cardBefore(uid) {
       return get(/databases/$(database)/documents/staff/$(uid)).data;
+    }
+    function cardAfter(uid) {
+      return getAfter(/databases/$(database)/documents/staff/$(uid)).data;
     }
 
     match /staff/{uid} {
@@ -29,17 +34,18 @@ service cloud.firestore {
 
       allow read: if isSelf(uid);
 
+      // First-time setup of an employee's own time card.
       allow create: if isSelf(uid)
         && request.resource.data.onClock == false
         && request.resource.data.since == null;
 
       allow update: if isSelf(uid) && (
-        // clock in: start time must be the server's time
+        // Clock in: start time must be the server's time.
         (request.resource.data.onClock == true && resource.data.onClock == false
           && request.resource.data.since == request.time)
-        // clock out
+        // Clock out.
         || (request.resource.data.onClock == false && request.resource.data.since == null)
-        // reminder or name change: clock state untouched
+        // Name or reminder change: clock state untouched.
         || (request.resource.data.onClock == resource.data.onClock
           && request.resource.data.since == resource.data.since)
       );
@@ -47,12 +53,16 @@ service cloud.firestore {
       match /punches/{punchId} {
         allow read, write: if isManager();
 
-        // An employee may only add the punch that closes their current shift,
-        // with the server's clock-in time and the server's current time.
+        // An employee may add only the one punch that closes their current shift:
+        // named after the clock-in time, stamped with the server's clock-out time,
+        // and saved together with clocking out.
         allow create: if isSelf(uid)
-          && card(uid).onClock == true
+          && cardBefore(uid).onClock == true
+          && cardBefore(uid).since != null
+          && punchId == string(cardBefore(uid).since.toMillis())
+          && cardAfter(uid).onClock == false
           && request.resource.data.keys().hasOnly(['in', 'out', 'week'])
-          && request.resource.data.in == card(uid).since
+          && request.resource.data.in == cardBefore(uid).since
           && request.resource.data.out == request.time
           && request.resource.data.week is string;
       }

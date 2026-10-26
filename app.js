@@ -34,7 +34,9 @@ const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 function failMsg(e) {
   const c = e?.code || '';
-  if (c === 'permission-denied') return "That wasn't allowed. Ask your manager to check your account.";
+  if (c === 'permission-denied') return owner
+    ? 'Firebase blocked this. Publish firestore.rules (with your user ID in it) under Firestore Database > Rules.'
+    : "That wasn't allowed. Ask your manager to check the app's setup.";
   if (c === 'unavailable') return "You're offline. Connect and try again.";
   return "That didn't save. Check your connection and try again.";
 }
@@ -59,10 +61,15 @@ function renderInstall() {
 }
 
 /* ---------- boot ---------- */
-if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith('PASTE')) {
-  $('#app').innerHTML = `<div class="panel empty"><h2>Almost set up</h2><p class="note">Open <b>config.js</b> and paste in your Firebase settings. The README walks through it step by step.</p></div>`;
+const unfilled = Object.entries(firebaseConfig).filter(([, v]) => !v || String(v).startsWith('PASTE')).map(([k]) => k);
+if (unfilled.length) {
+  setViewAttr('auth');
+  $('#app').innerHTML = `<div class="panel stack"><div><div class="eyebrow">Setup step</div><h2>The site is live. Now add your Firebase settings.</h2></div>
+    <p class="note">On GitHub, open <code>config.js</code>, click the pencil icon, and replace the <code>PASTE_…</code> text with the values from Firebase. Still missing: <b>${unfilled.map(esc).join(', ')}</b>.</p>
+    <p class="note">After you commit, wait a minute and reload this page.</p></div>`;
   throw new Error('VDI TimeKeeper: config.js not filled in');
 }
+const managerSet = !!MANAGER_UID && !MANAGER_UID.startsWith('PASTE');
 const fb = initializeApp(firebaseConfig);
 const auth = getAuth(fb);
 const db = getFirestore(fb);
@@ -79,6 +86,7 @@ onAuthStateChanged(auth, user => {
   if (!user) { uid = null; return renderAuth(); }
   uid = user.uid; owner = uid === MANAGER_UID;
   $('#signout').hidden = false;
+  if (!managerSet) return renderClaimManager(user);
   $('#who-line').textContent = owner ? 'Manager view · only you can see hours' : `Signed in as ${user.email}`;
   meUnsub = onSnapshot(doc(db, 'staff', uid), s => {
     me = s.exists() ? { ...s.data({ serverTimestamps: 'estimate' }) } : null;
@@ -117,6 +125,27 @@ function setView(v) {
   $('#tab-me').setAttribute('aria-pressed', v === 'me');
   renderInstall();
   v === 'team' ? renderTeam() : renderEmployee();
+}
+
+/* ---------- one-time setup: make the first account the manager ---------- */
+function renderClaimManager(user) {
+  setViewAttr('auth'); $('#install').hidden = true;
+  $('#who-line').textContent = `Signed in as ${user.email}`;
+  $('#app').innerHTML = `<div class="panel stack">
+    <div><div class="eyebrow">Last setup step</div><h2>Make this account the manager</h2></div>
+    <p class="note">This is your user ID. Copy it exactly:</p>
+    <div class="uid" id="uid-box">${esc(user.uid)}</div>
+    <button class="primary" id="uid-copy">Copy user ID</button>
+    <ol class="steps note">
+      <li>On GitHub, open <code>config.js</code>, click the pencil icon, and replace <code>PASTE_YOUR_UID</code> with this ID. Click <b>Commit changes</b>.</li>
+      <li>On GitHub, open <code>firestore.rules</code>, click the pencil icon, and replace <code>PASTE_YOUR_UID</code> with this ID. Click <b>Commit changes</b>.</li>
+      <li>Copy everything in <code>firestore.rules</code>. In Firebase, go to <b>Firestore Database → Rules</b>, delete what's there, paste, and click <b>Publish</b>.</li>
+      <li>Wait a minute, then reload this page. You'll see <b>Team hours</b>.</li>
+    </ol></div>`;
+  $('#uid-copy').onclick = async () => {
+    try { await navigator.clipboard.writeText(user.uid); toast('User ID copied'); }
+    catch { const r = document.createRange(); r.selectNodeContents($('#uid-box')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Selected. Press Ctrl+C to copy.'); }
+  };
 }
 
 /* ---------- sign in ---------- */
@@ -236,7 +265,8 @@ async function punch() {
 // Closes an open shift: one server-stamped punch record plus the time card reset, saved together.
 async function closeShift(id, sinceTs, sinceMs) {
   const batch = writeBatch(db);
-  if (sinceTs) batch.set(doc(collection(db, 'staff', id, 'punches')), { in: sinceTs, out: serverTimestamp(), week: wkKey(sinceMs) });
+  // The punch is named after its clock-in time, so a shift can only ever be recorded once.
+  if (sinceTs) batch.set(doc(db, 'staff', id, 'punches', String(sinceMs)), { in: sinceTs, out: serverTimestamp(), week: wkKey(sinceMs) });
   batch.update(doc(db, 'staff', id), { onClock: false, since: null });
   await batch.commit();
 }
@@ -263,7 +293,7 @@ const wasFired = k => { try { return localStorage.getItem(firedKey(k)) === '1'; 
 const markFired = k => { try { localStorage.setItem(firedKey(k), '1'); } catch {} };
 function clearBanner() { firedBanner = null; const b = $('#rem-banner'); if (b) b.innerHTML = ''; }
 async function notify(body) {
-  try { if (Notification.permission !== 'granted') return; const reg = await navigator.serviceWorker.ready; reg.showNotification('VDI TimeKeeper', { body, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'tk-reminder' }); } catch {}
+  try { if (Notification.permission !== 'granted') return; const reg = await navigator.serviceWorker.ready; reg.showNotification('VDI TimeKeeper', { body, icon: 'icon-192.png', badge: 'icon-192.png', tag: 'tk-reminder' }); } catch {}
 }
 function checkReminders() {
   if (!me || !$('#rem-banner')) return;

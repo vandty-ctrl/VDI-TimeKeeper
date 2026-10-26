@@ -1,13 +1,18 @@
 // VDI TimeKeeper service worker: lets the app install to the home screen and open fast.
-// Bump VERSION whenever you change the app files so phones pick up the update.
+// Whenever you change any app file, change VERSION (v1 -> v2 -> v3...) so phones get the update.
 const VERSION = 'vdi-tk-v1';
 const SHELL = [
   './', './index.html', './app.js', './config.js', './manifest.webmanifest',
-  './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'
+  './icon-192.png', './icon-512.png', './apple-touch-icon.png'
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // Save each file on its own, so one missing file never blocks installing the app.
+  e.waitUntil(
+    caches.open(VERSION)
+      .then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => {}))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {
@@ -19,15 +24,14 @@ self.addEventListener('activate', e => {
 });
 
 // Network first for the app's own files, falling back to the saved copy when offline.
-// Firebase traffic (other domains) is never cached.
+// Firebase traffic (other websites) is never cached.
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== self.location.origin) return;
   e.respondWith(
     fetch(e.request)
       .then(res => {
-        const copy = res.clone();
-        caches.open(VERSION).then(c => c.put(e.request, copy));
+        if (res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(e.request, copy)); }
         return res;
       })
       .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
